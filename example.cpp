@@ -158,6 +158,14 @@ int main(int argc, char* argv[]) {
   // obsolete section (all options in this section do nothing)
   options.addObsoleteSection("y2kbug");
 
+  // make sections and options definitions immutable
+  // any further attempt to add sections or options will throw an exception
+  // note that it is not required to call `seal()`, but it may be useful when
+  // option parameter setup is split across multiple files and one wants
+  // certainty that parameter definitions are not modified after a certain point
+  options.seal();
+
+
   // parse initial command-line options from argv
   {
     ArgumentParser parser(&options);
