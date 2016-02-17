@@ -15,11 +15,15 @@ class IniFileParser {
  public:
   explicit IniFileParser(ProgramOptions* options) : _options(options) {
     // a line with just comments, e.g. #... or ;...
-    _matchers.comment = std::regex("^[ \t]*([#;].*)?$", std::regex::nosubs | std::regex::ECMAScript);
+    _matchers.comment = std::regex("^[ \t]*([#;].*)?$",
+                                   std::regex::nosubs | std::regex::ECMAScript);
     // a line that starts a section, e.g. [server]
-    _matchers.section = std::regex("^[ \t]*\\[([-_A-Za-z0-9]*)\\][ \t]*$", std::regex::ECMAScript);
+    _matchers.section = std::regex("^[ \t]*\\[([-_A-Za-z0-9]*)\\][ \t]*$",
+                                   std::regex::ECMAScript);
     // a line that assigns a value to a named variable
-    _matchers.assignment = std::regex("^[ \t]*(([-_A-Za-z0-9]*\\.)?[-_A-Za-z0-9]*)[ \t]*=[ \t]*(.*)?[ \t]*$", std::regex::ECMAScript);
+    _matchers.assignment = std::regex(
+        "^[ \t]*(([-_A-Za-z0-9]*\\.)?[-_A-Za-z0-9]*)[ \t]*=[ \t]*(.*)?[ \t]*$",
+        std::regex::ECMAScript);
   }
 
   // parse a config file. returns true if all is well, false otherwise
@@ -33,36 +37,35 @@ class IniFileParser {
 
     std::string currentSection;
     size_t lineNumber = 0;
-    
+
     while (ifs.good()) {
       std::string line;
       ++lineNumber;
 
       std::getline(ifs, line);
-      
+
       if (std::regex_match(line, _matchers.comment)) {
         // skip over comments
         continue;
       }
 
-      // set context for parsing (used in error messages)        
-      _options->setContext("config file '" + filename + "', line #" + std::to_string(lineNumber));
+      // set context for parsing (used in error messages)
+      _options->setContext("config file '" + filename + "', line #" +
+                           std::to_string(lineNumber));
 
       std::smatch match;
       if (std::regex_match(line, match, _matchers.section)) {
         // found section
-        currentSection = match[1].str(); 
-      }
-      else if (std::regex_match(line, match, _matchers.assignment)) {
-        // found assignment 
+        currentSection = match[1].str();
+      } else if (std::regex_match(line, match, _matchers.assignment)) {
+        // found assignment
         std::string option;
         std::string value(match[3].str());
 
         if (currentSection.empty() || !match[2].str().empty()) {
           // use option as specified
           option = match[1].str();
-        }
-        else {
+        } else {
           // use option prefixed with current section
           option = currentSection + "." + match[1].str();
         }
@@ -70,10 +73,9 @@ class IniFileParser {
         if (!_options->setValue(option, value)) {
           return false;
         }
-      }
-      else {
+      } else {
         // unknown type of line. cannot handle it
-        return _options->fail("unknown line type"); 
+        return _options->fail("unknown line type");
       }
     }
 
@@ -82,17 +84,14 @@ class IniFileParser {
   }
 
  private:
-
   ProgramOptions* _options;
 
   struct {
     std::regex comment;
     std::regex section;
     std::regex assignment;
-  }
-  _matchers;
+  } _matchers;
 };
-
 }
 }
 

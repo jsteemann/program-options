@@ -12,7 +12,8 @@ class ArgumentParser {
  public:
   explicit ArgumentParser(ProgramOptions* options) : _options(options) {}
 
-  // get the name of the section for which help was requested, and "*" if only --help was specified
+  // get the name of the section for which help was requested, and "*" if only
+  // --help was specified
   std::string helpSection(int argc, char* argv[]) {
     for (int i = 1; i < argc; ++i) {
       std::string const current(argv[i]);
@@ -38,22 +39,20 @@ class ArgumentParser {
       std::string option;
       std::string value;
       std::string const current(argv[i]);
-      
+
       if (!lastOption.empty()) {
         option = lastOption;
       }
 
       if (!option.empty()) {
         value = current;
-      }
-      else {  
+      } else {
         option = current;
 
         size_t dashes = 0;
         if (option.substr(0, 2) == "--") {
           dashes = 2;
-        }
-        else if (option.substr(0, 1) == "-") {
+        } else if (option.substr(0, 1) == "-") {
           dashes = 1;
         }
 
@@ -75,19 +74,17 @@ class ArgumentParser {
             return false;
           }
 
-          if (!_options->requiresValue(option)) { 
+          if (!_options->requiresValue(option)) {
             // option does not require a parameter
             if (!_options->setValue(option, "")) {
               return false;
             }
-          }
-          else {
+          } else {
             // option requires a parameter
             lastOption = option;
           }
-          continue; 
-        }
-        else {
+          continue;
+        } else {
           // option = value
           value = option.substr(pos + 1);
           option = option.substr(0, pos);
@@ -96,27 +93,26 @@ class ArgumentParser {
           }
         }
       }
-       
+
       if (!_options->setValue(option, value)) {
         return false;
       }
-      lastOption = ""; 
+      lastOption = "";
     }
 
     // we got some previous option, but no value was specified for it
     if (!lastOption.empty()) {
-      return _options->fail("no value specified for option '" + lastOption + "'");
+      return _options->fail("no value specified for option '" + lastOption +
+                            "'");
     }
 
     // all is well
     return true;
   }
-  
- private:
 
+ private:
   ProgramOptions* _options;
 };
-
 }
 }
 

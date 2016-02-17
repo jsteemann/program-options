@@ -21,7 +21,7 @@ namespace arangodb {
 namespace options {
 
 // program options data structure
-// typically an application will have a single instance of this 
+// typically an application will have a single instance of this
 class ProgramOptions {
  public:
   // struct containing the option processing result
@@ -31,22 +31,16 @@ class ProgramOptions {
     ~ProcessingResult() = default;
 
     // mark an option as being touched during options processing
-    void touch(std::string const& name) {
-      _touched.emplace(name);
-    }
+    void touch(std::string const& name) { _touched.emplace(name); }
     // whether or not an option was touched during options processing
     bool touched(std::string const& name) const {
       return _touched.find(Option::stripPrefix(name)) != _touched.end();
     }
     // mark options processing as failed
-    void failed(bool value) {
-      _failed = value;
-    }
+    void failed(bool value) { _failed = value; }
     // whether or not options processing has failed
-    bool failed() const {
-      return _failed;
-    }
-  
+    bool failed() const { return _failed; }
+
     // values of all positional arguments found
     std::vector<std::string> _positionals;
     // which options were touched during option processing
@@ -54,21 +48,26 @@ class ProgramOptions {
     // whether or not options processing failed
     bool _failed;
   };
- 
+
   // function type for determining terminal width
   typedef std::function<size_t()> TerminalWidthFuncType;
   // function type for determining the similarity between two strings
-  typedef std::function<int(std::string const&, std::string const&)> SimilarityFuncType;
+  typedef std::function<int(std::string const&, std::string const&)>
+      SimilarityFuncType;
 
   // no need to copy this
   ProgramOptions(ProgramOptions const&) = delete;
   ProgramOptions& operator=(ProgramOptions const&) = delete;
 
-  ProgramOptions(char const* progname, std::string const& usage, std::string const& more,
+  ProgramOptions(char const* progname, std::string const& usage,
+                 std::string const& more,
                  TerminalWidthFuncType const& terminalWidth,
-                 SimilarityFuncType const& similarity) 
-      : _progname(progname), _usage(usage), _more(more),
-        _terminalWidth(terminalWidth), _similarity(similarity),
+                 SimilarityFuncType const& similarity)
+      : _progname(progname),
+        _usage(usage),
+        _more(more),
+        _terminalWidth(terminalWidth),
+        _similarity(similarity),
         _processingResult(),
         _sealed(false) {
     // find progname wildcard in string
@@ -76,32 +75,25 @@ class ProgramOptions {
 
     if (pos != std::string::npos) {
       // and replace it with actual program name
-      _usage = usage.substr(0, pos) + _progname + _usage.substr(pos + strlen(ARANGODB_PROGRAM_OPTIONS_PROGNAME)); 
+      _usage = usage.substr(0, pos) + _progname +
+               _usage.substr(pos + strlen(ARANGODB_PROGRAM_OPTIONS_PROGNAME));
     }
   }
 
   // return a const reference to the processing result
-  ProcessingResult const& processingResult() const {
-    return _processingResult;
-  }
+  ProcessingResult const& processingResult() const { return _processingResult; }
 
   // return a reference to the processing result
-  ProcessingResult& processingResult() {
-    return _processingResult;
-  }
+  ProcessingResult& processingResult() { return _processingResult; }
 
   // seal the options
   // tryin to add an option or a section after sealing will throw an error
-  void seal() {
-    _sealed = true;
-  }
+  void seal() { _sealed = true; }
 
   // set context for error reporting
-  void setContext(std::string const& value) {
-    _context = value;
-  }
+  void setContext(std::string const& value) { _context = value; }
 
-  // adds a section to the options 
+  // adds a section to the options
   void addSection(Section const& section) {
     checkIfSealed();
     _sections.emplace(section.name, section);
@@ -113,36 +105,38 @@ class ProgramOptions {
   }
 
   // adds a hidden section to the program options
-  void addHiddenSection(std::string const& name, std::string const& description) {
+  void addHiddenSection(std::string const& name,
+                        std::string const& description) {
     addSection(Section(name, description, "", true, false));
   }
-  
+
   // adds a hidden and obsolete section to the program options
   void addObsoleteSection(std::string const& name) {
     addSection(Section(name, "", "", true, true));
   }
 
   // adds an option to the program options
-  void addOption(std::string const& name, std::string const& description, Parameter* parameter) {
+  void addOption(std::string const& name, std::string const& description,
+                 Parameter* parameter) {
     addOption(Option(name, description, parameter, false, false));
   }
-  
+
   // adds a hidden option to the program options
-  void addHiddenOption(std::string const& name, std::string const& description, Parameter* parameter) {
+  void addHiddenOption(std::string const& name, std::string const& description,
+                       Parameter* parameter) {
     addOption(Option(name, description, parameter, true, false));
   }
-  
+
   // adds an obsolete and hidden option to the program options
-  void addObsoleteOption(std::string const& name, std::string const& description) {
+  void addObsoleteOption(std::string const& name,
+                         std::string const& description) {
     addOption(Option(name, description, new ObsoleteParameter(), true, true));
   }
 
   // prints usage information
-  void printUsage() const {
-    std::cout << _usage << std::endl << std::endl;
-  }
+  void printUsage() const { std::cout << _usage << std::endl << std::endl; }
 
-  // prints a help for all options 
+  // prints a help for all options
   void printHelp(std::string const& section) const {
     printUsage();
 
@@ -158,13 +152,13 @@ class ProgramOptions {
     printSectionsHelp();
   }
 
-  // prints the names for all section help options 
+  // prints the names for all section help options
   void printSectionsHelp() const {
     // print names of sections
     std::cout << _more;
     for (auto const& it : _sections) {
       if (!it.second.name.empty() && it.second.hasOptions()) {
-        std::cout << " --help-" << it.second.name; 
+        std::cout << " --help-" << it.second.name;
       }
     }
     std::cout << std::endl;
@@ -180,7 +174,8 @@ class ProgramOptions {
     return (*it).second;
   }
 
-  void walk(std::function<void(Section const&, Option const&)> const& callback, bool onlyTouched) {
+  void walk(std::function<void(Section const&, Option const&)> const& callback,
+            bool onlyTouched) {
     for (auto const& it : _sections) {
       if (it.second.obsolete) {
         // obsolete section. ignore it
@@ -208,7 +203,7 @@ class ProgramOptions {
 
     if (it == _sections.end()) {
       return unknownOption(name);
-    } 
+    }
 
     auto it2 = (*it).second.options.find(parts.second);
 
@@ -218,7 +213,7 @@ class ProgramOptions {
 
     return true;
   }
-  
+
   // sets a value for an option
   bool setValue(std::string const& name, std::string const& value) {
     auto parts = Option::splitName(name);
@@ -226,7 +221,7 @@ class ProgramOptions {
 
     if (it == _sections.end()) {
       return unknownOption(name);
-    } 
+    }
 
     if ((*it).second.obsolete) {
       // section is obsolete. ignore it
@@ -245,14 +240,14 @@ class ProgramOptions {
       _processingResult.touch(name);
       return true;
     }
-    
+
     std::string result = option.parameter->set(value);
 
     if (!result.empty()) {
       // parameter validation failed
       return fail("error setting value for option '" + name + "': " + result);
     }
-    
+
     _processingResult.touch(name);
 
     return true;
@@ -265,7 +260,7 @@ class ProgramOptions {
 
     if (it == _sections.end()) {
       return false;
-    } 
+    }
 
     auto it2 = (*it).second.options.find(parts.second);
 
@@ -278,14 +273,14 @@ class ProgramOptions {
 
   // returns a pointer to an option, specified by option name
   // returns a nullptr if the option is unknown
-  template<typename T>
+  template <typename T>
   T* get(std::string const& name) {
     auto parts = Option::splitName(name);
     auto it = _sections.find(parts.first);
 
     if (it == _sections.end()) {
       return nullptr;
-    } 
+    }
 
     auto it2 = (*it).second.options.find(parts.second);
 
@@ -297,21 +292,21 @@ class ProgramOptions {
 
     return dynamic_cast<T>(option.parameter.get());
   }
-   
-  // handle an unknown option   
+
+  // handle an unknown option
   bool unknownOption(std::string const& name) {
     fail("unknown option '" + name + "'");
- 
+
     auto similarOptions = similar(name, 8, 4);
-    if (!similarOptions.empty()) { 
+    if (!similarOptions.empty()) {
       std::cerr << "Did you mean one of these?" << std::endl;
       for (auto const& it : similarOptions) {
         std::cerr << "  " << it << std::endl;
       }
-      std::cerr << std::endl; 
+      std::cerr << std::endl;
     }
     return false;
-  } 
+  }
 
   // report an error (callback from parser)
   bool fail(std::string const& message) {
@@ -327,25 +322,28 @@ class ProgramOptions {
   }
 
  private:
- 
-  // adds an option to the list of options 
+  // adds an option to the list of options
   void addOption(Option const& option) {
     checkIfSealed();
     auto it = _sections.find(option.section);
 
     if (it == _sections.end()) {
-      throw std::logic_error(std::string("no section defined for program option ") + option.displayName());
+      throw std::logic_error(
+          std::string("no section defined for program option ") +
+          option.displayName());
     }
 
     if (!option.shorthand.empty()) {
       if (!_shorthands.emplace(option.shorthand, option.fullName()).second) {
-        throw std::logic_error(std::string("shorthand option already defined for option ") + option.displayName());
-      } 
+        throw std::logic_error(
+            std::string("shorthand option already defined for option ") +
+            option.displayName());
+      }
     }
 
     (*it).second.options.emplace(option.name, option);
   }
-  
+
   // determine maximum width of all options labels
   size_t optionsWidth() const {
     size_t width = 0;
@@ -363,36 +361,39 @@ class ProgramOptions {
   }
 
   // get a list of similar options
-  std::vector<std::string> similar(std::string const& value, int cutOff, size_t max) {
+  std::vector<std::string> similar(std::string const& value, int cutOff,
+                                   size_t max) {
     std::vector<std::string> result;
 
     if (_similarity != nullptr) {
       // build a sorted map of similar values first
       std::multimap<int, std::string> distances;
       // walk over all options
-      walk([this, &value, &distances] (Section const&, Option const& option) {
+      walk([this, &value, &distances](Section const&, Option const& option) {
         if (option.fullName() != value) {
-          distances.emplace(_similarity(value, option.fullName()), option.displayName());
+          distances.emplace(_similarity(value, option.fullName()),
+                            option.displayName());
         }
       }, false);
 
-      // now return the ones that have an edit distance not higher than the cutOff value 
+      // now return the ones that have an edit distance not higher than the
+      // cutOff value
       int last = 0;
       for (auto const& it : distances) {
         if (last > 1 && it.first > 2 * last) {
           break;
-        } 
+        }
         if (it.first > cutOff) {
           continue;
         }
         result.emplace_back(it.second);
         if (result.size() >= max) {
           break;
-        } 
+        }
         last = it.first;
       }
     }
- 
+
     return result;
   }
 
@@ -419,7 +420,6 @@ class ProgramOptions {
   // whether or not the program options setup is still mutable
   bool _sealed;
 };
-
 }
 }
 

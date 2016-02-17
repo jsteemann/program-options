@@ -11,52 +11,50 @@ namespace arangodb {
 namespace options {
 
 // convert a string into a number, base version for signed integer types
-template<typename T>
-typename std::enable_if<std::is_signed<T>::value, T>::type toNumber(std::string const& value) {
+template <typename T>
+typename std::enable_if<std::is_signed<T>::value, T>::type toNumber(
+    std::string const& value) {
   auto v = static_cast<T>(std::stoll(value));
-  if (v < std::numeric_limits<T>::min() ||
-      v > std::numeric_limits<T>::max()) {
+  if (v < std::numeric_limits<T>::min() || v > std::numeric_limits<T>::max()) {
     throw std::out_of_range(value);
   }
   return static_cast<T>(v);
 }
 
 // convert a string into a number, base version for unsigned integer types
-template<typename T>
-typename std::enable_if<std::is_unsigned<T>::value, T>::type toNumber(std::string const& value) {
+template <typename T>
+typename std::enable_if<std::is_unsigned<T>::value, T>::type toNumber(
+    std::string const& value) {
   auto v = static_cast<T>(std::stoull(value));
-  if (v < std::numeric_limits<T>::min() ||
-      v > std::numeric_limits<T>::max()) {
+  if (v < std::numeric_limits<T>::min() || v > std::numeric_limits<T>::max()) {
     throw std::out_of_range(value);
   }
   return static_cast<T>(v);
 }
 
 // convert a string into a number, version for double values
-template<>
-double toNumber<double>(std::string const& value) { 
+template <>
+double toNumber<double>(std::string const& value) {
   return std::stod(value);
 }
 
-
 // stringify a value, base version for any type
-template<typename T>
+template <typename T>
 inline std::string stringifyValue(T const& value) {
   return std::to_string(value);
 }
 
 // stringify a boolean value, specialized version
-template<>
+template <>
 inline std::string stringifyValue<bool>(bool const& value) {
   return value ? "true" : "false";
 }
 
 // stringify a string value, specialized version
-template<>
+template <>
 inline std::string stringifyValue<std::string>(std::string const& value) {
   return "\"" + value + "\"";
 }
-
 
 // abstract base parameter type struct
 struct Parameter {
@@ -64,14 +62,14 @@ struct Parameter {
   virtual ~Parameter() {}
 
   virtual bool requiresValue() const { return true; }
-  virtual std::string name() const = 0; 
+  virtual std::string name() const = 0;
   virtual std::string valueString() const = 0;
   virtual std::string set(std::string const&) = 0;
 
   virtual std::string typeDescription() const {
     if (requiresValue()) {
       return std::string("<") + name() + std::string(">");
-    } 
+    }
     return "";
   }
 };
@@ -80,21 +78,22 @@ struct Parameter {
 struct BooleanParameter : public Parameter {
   typedef bool ValueType;
 
-  explicit BooleanParameter(ValueType* ptr, bool requiresValue = true) : ptr(ptr), required(requiresValue) {}
-  
+  explicit BooleanParameter(ValueType* ptr, bool requiresValue = true)
+      : ptr(ptr), required(requiresValue) {}
+
   bool requiresValue() const override { return required; }
   std::string name() const override { return "boolean"; }
   std::string valueString() const override { return stringifyValue(*ptr); }
 
   std::string set(std::string const& value) override {
-    if (!required ||
-        value == "true" || value == "false" || value == "on" || value == "off" || value == "1" || value == "0") {
+    if (!required || value == "true" || value == "false" || value == "on" ||
+        value == "off" || value == "1" || value == "0") {
       *ptr = (!required || value == "true" || value == "on" || value == "1");
       return "";
     }
     return "invalid value. expecting 'true' or 'false'";
   }
-  
+
   std::string typeDescription() const override {
     if (required) {
       return Parameter::typeDescription();
@@ -108,15 +107,13 @@ struct BooleanParameter : public Parameter {
 
 // specialized type for numeric values
 // this templated type needs a concrete number type
-template<typename T>
+template <typename T>
 struct NumericParameter : public Parameter {
   typedef T ValueType;
 
   explicit NumericParameter(ValueType* ptr) : ptr(ptr) {}
-  
-  std::string valueString() const override {
-    return stringifyValue(*ptr);
-  }
+
+  std::string valueString() const override { return stringifyValue(*ptr); }
 
   std::string set(std::string const& value) override {
     try {
@@ -126,13 +123,12 @@ struct NumericParameter : public Parameter {
         *ptr = v;
         return "";
       }
-    } 
-    catch (...) {
+    } catch (...) {
       return "invalid numeric value";
     }
     return "number out of range";
   }
-  
+
   ValueType* ptr;
 };
 
@@ -141,7 +137,7 @@ struct Int16Parameter : public NumericParameter<int16_t> {
   typedef int16_t ValueType;
 
   explicit Int16Parameter(int16_t* ptr) : NumericParameter<int16_t>(ptr) {}
-  
+
   std::string name() const override { return "int16"; }
 };
 
@@ -150,7 +146,7 @@ struct UInt16Parameter : public NumericParameter<uint16_t> {
   typedef uint16_t ValueType;
 
   explicit UInt16Parameter(ValueType* ptr) : NumericParameter<uint16_t>(ptr) {}
-  
+
   std::string name() const override { return "uint16"; }
 };
 
@@ -159,7 +155,7 @@ struct Int32Parameter : public NumericParameter<int32_t> {
   typedef int32_t ValueType;
 
   explicit Int32Parameter(ValueType* ptr) : NumericParameter<int32_t>(ptr) {}
-  
+
   std::string name() const override { return "int32"; }
 };
 
@@ -168,7 +164,7 @@ struct UInt32Parameter : public NumericParameter<uint32_t> {
   typedef uint32_t ValueType;
 
   explicit UInt32Parameter(ValueType* ptr) : NumericParameter<uint32_t>(ptr) {}
-  
+
   std::string name() const override { return "uint32"; }
 };
 
@@ -177,7 +173,7 @@ struct Int64Parameter : public NumericParameter<int64_t> {
   typedef int64_t ValueType;
 
   explicit Int64Parameter(ValueType* ptr) : NumericParameter<int64_t>(ptr) {}
-  
+
   std::string name() const override { return "int64"; }
 };
 
@@ -186,28 +182,30 @@ struct UInt64Parameter : public NumericParameter<uint64_t> {
   typedef uint64_t ValueType;
 
   explicit UInt64Parameter(ValueType* ptr) : NumericParameter<uint64_t>(ptr) {}
-  
+
   std::string name() const override { return "uint64"; }
 };
 
-template<typename T>
+template <typename T>
 struct BoundedParameter : public T {
-  BoundedParameter(typename T::ValueType* ptr, typename T::ValueType min, typename T::ValueType max) : T(ptr), min(min), max(max) {}
+  BoundedParameter(typename T::ValueType* ptr, typename T::ValueType min,
+                   typename T::ValueType max)
+      : T(ptr), min(min), max(max) {}
 
   std::string set(std::string const& value) override {
     try {
       typename T::ValueType v = toNumber<typename T::ValueType>(value);
       if (v >= std::numeric_limits<typename T::ValueType>::min() &&
-          v <= std::numeric_limits<typename T::ValueType>::max() &&
-          v >= min && v <= max) {
+          v <= std::numeric_limits<typename T::ValueType>::max() && v >= min &&
+          v <= max) {
         *this->ptr = v;
         return "";
       }
-    } 
-    catch (...) {
+    } catch (...) {
       return "invalid numeric value";
     }
-    return "number out of allowed range (" + std::to_string(min) + " - " + std::to_string(max) + ")";
+    return "number out of allowed range (" + std::to_string(min) + " - " +
+           std::to_string(max) + ")";
   }
 
   typename T::ValueType min;
@@ -219,7 +217,7 @@ struct DoubleParameter : public NumericParameter<double> {
   typedef double ValueType;
 
   explicit DoubleParameter(ValueType* ptr) : NumericParameter<double>(ptr) {}
-  
+
   std::string name() const override { return "double"; }
 };
 
@@ -228,13 +226,13 @@ struct StringParameter : public Parameter {
   typedef std::string ValueType;
 
   explicit StringParameter(ValueType* ptr) : ptr(ptr) {}
-  
+
   std::string name() const override { return "string"; }
   std::string valueString() const override { return stringifyValue(*ptr); }
 
-  std::string set(std::string const& value) override { 
+  std::string set(std::string const& value) override {
     *ptr = value;
-    return ""; 
+    return "";
   }
 
   ValueType* ptr;
@@ -242,14 +240,15 @@ struct StringParameter : public Parameter {
 
 // specialized type for vectors of values
 // this templated type needs a concrete value type
-template<typename T>
+template <typename T>
 struct VectorParameter : public Parameter {
-  explicit VectorParameter(std::vector<typename T::ValueType>* ptr) : ptr(ptr) {}
-  
+  explicit VectorParameter(std::vector<typename T::ValueType>* ptr)
+      : ptr(ptr) {}
+
   std::string name() const override {
     typename T::ValueType dummy;
-    T param(&dummy); 
-    return std::string(param.name()) + "..."; 
+    T param(&dummy);
+    return std::string(param.name()) + "...";
   }
 
   std::string valueString() const override {
@@ -257,33 +256,32 @@ struct VectorParameter : public Parameter {
     for (size_t i = 0; i < ptr->size(); ++i) {
       if (i > 0) {
         value.append(", ");
-      } 
+      }
       value.append(stringifyValue(ptr->at(i)));
     }
     return value;
   }
 
-  std::string set(std::string const& value) override { 
+  std::string set(std::string const& value) override {
     typename T::ValueType dummy;
-    T param(&dummy); 
+    T param(&dummy);
     std::string result = param.set(value);
     if (result.empty()) {
       ptr->push_back(*(param.ptr));
     }
-    return result; 
+    return result;
   }
 
   std::vector<typename T::ValueType>* ptr;
 };
 
-// a type that's useful for obsolete parameters that do nothing 
+// a type that's useful for obsolete parameters that do nothing
 struct ObsoleteParameter : public Parameter {
   bool requiresValue() const override { return false; }
   std::string name() const override { return "obsolete"; }
   std::string valueString() const override { return "-"; }
   std::string set(std::string const&) override { return ""; }
 };
-
 }
 }
 
